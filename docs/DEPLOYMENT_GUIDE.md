@@ -82,3 +82,14 @@
 Cloudflare 本身会保留部署版本以支持回滚，本方案没有历史新闻入口，也不上传历史目录或数据库；它不是跨运行新闻数据库。若要求连托管商旧部署副本也删除，需在 Cloudflare 控制台删除旧部署。
 
 参考官方说明（核对日期：2026-11-04）：[Direct Upload](https://developers.cloudflare.com/pages/get-started/direct-upload/)、[CI 部署与 Token 权限](https://developers.cloudflare.com/pages/how-to/use-direct-upload-with-continuous-integration/)。
+
+## 11. 如代码尚未推送到 GitHub
+
+本地仓库位于 `D:\MyMind\TrendRadar`，分支为 `codex/daily-news-pages`。如果交付报告说明推送受阻，可在电脑终端执行：
+
+```powershell
+cd D:\MyMind\TrendRadar
+git push -u origin codex/daily-news-pages
+```
+
+按 Git Credential Manager 提示登录有写入权的 GitHub 账号。然后打开仓库，点击 **Compare & pull request**；确认 **base repository** 为 `lunatang567-spec/TrendRadar`、**base** 为 `master`、**compare** 为 `codex/daily-news-pages`，创建 PR 并检查 **Validate news website**。测试通过后合并到 `master`。若 Fork 的 Actions 被禁用，先启用 Actions，再在验证工作流选择功能分支手动运行。没有推送成功前，不要运行 GitHub 上的旧采集工作流。

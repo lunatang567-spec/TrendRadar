@@ -22,6 +22,7 @@
 - `clean-crawler.yml` 原样保留。`crawler.yml` 的 Check Expiration 步骤与七天限制原样保留，无自动签到。
 - 使用官方采集器、关键词解析器和 HTML 生成器，没有新增爬虫接口或重写展示程序。
 - `index.html` 为不含历史新闻的静态占位页；正式首页只在采集时生成，不提交到 GitHub。
+- 原仓库已跟踪 7 个 `output/news/2025-12-21.db` 至 `2025-12-27.db` 示例数据库；本次从当前分支移除它们，不改写旧 Git 提交历史。
 
 ## 用户下一步
 
@@ -42,4 +43,4 @@ Cloudflare Token 的真实权限、项目归属、Production 分支配置、真�
 
 ## 提交通道
 
-GitHub 插件读取正常，但创建 Git tree 和功能分支均返回 `403 Resource not accessible by integration`。本地代码可审查并提交；远端推送状态以最终交付报告为准。若远端提交未成功，需授权可写的 GitHub 连接，或在本机配置 Git 登录后推送功能分支，步骤见部署指南补充。
+GitHub 插件读取正常，但创建 Git tree 和功能分支均返回 `403 Resource not accessible by integration`。本地代码已提交到 `codex/daily-news-pages`；本机首次 Git push 连接被重置。远端推送状态以最终交付报告为准。若远端提交未成功，需授权可写的 GitHub 连接，或在本机配置 Git 登录后推送功能分支，步骤见部署指南补充。
