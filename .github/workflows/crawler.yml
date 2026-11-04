@@ -28,14 +28,8 @@ on:
     #
     # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
     #
-    # 📝 修改运行时间：只改第一个数字（0-59），表示每小时第几分钟运行
-    # 📝 Change time: Only modify the first number (0-59) = minute of each hour
-    #
-    # 示例 / Examples:
-    #   "15 * * * *"     → 每小时第15分钟 / minute 15 every hour
-    #   "30 0-14 * * *"  → 北京时间 8:00-22:00 每小时第30分钟 / Beijing 8am-10pm
-    #
-    - cron: "33 * * * *"
+    # 每天北京时间 08:00（UTC 00:00）；GitHub 调度可能排队延迟。
+    - cron: "0 0 * * *"
 
   workflow_dispatch:
 
@@ -136,44 +130,21 @@ jobs:
       - name: Run crawler
         if: success()
         env:
-          FEISHU_WEBHOOK_URL: ${{ secrets.FEISHU_WEBHOOK_URL }}
-          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
-          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
-          DINGTALK_WEBHOOK_URL: ${{ secrets.DINGTALK_WEBHOOK_URL }}
-          WEWORK_WEBHOOK_URL: ${{ secrets.WEWORK_WEBHOOK_URL }}
-          WEWORK_MSG_TYPE: ${{ secrets.WEWORK_MSG_TYPE }}
-          EMAIL_FROM: ${{ secrets.EMAIL_FROM }}
-          EMAIL_PASSWORD: ${{ secrets.EMAIL_PASSWORD }}
-          EMAIL_TO: ${{ secrets.EMAIL_TO }}
-          EMAIL_SMTP_SERVER: ${{ secrets.EMAIL_SMTP_SERVER }}
-          EMAIL_SMTP_PORT: ${{ secrets.EMAIL_SMTP_PORT }}
-          NTFY_TOPIC: ${{ secrets.NTFY_TOPIC }}
-          NTFY_SERVER_URL: ${{ secrets.NTFY_SERVER_URL }}
-          NTFY_TOKEN: ${{ secrets.NTFY_TOKEN }}
-          BARK_URL: ${{ secrets.BARK_URL }}
-          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
-          # 通用Webhook配置
-          GENERIC_WEBHOOK_URL: ${{ secrets.GENERIC_WEBHOOK_URL }}
-          GENERIC_WEBHOOK_TEMPLATE: ${{ secrets.GENERIC_WEBHOOK_TEMPLATE }}
-          # AI 配置（ai_analysis 和 ai_translation 共享模型配置）
-          AI_ANALYSIS_ENABLED: ${{ secrets.AI_ANALYSIS_ENABLED }}
-          AI_API_KEY: ${{ secrets.AI_API_KEY }}
-          AI_MODEL: ${{ secrets.AI_MODEL }}
-          AI_API_BASE: ${{ secrets.AI_API_BASE }}
-          # 远程存储配置
-          S3_BUCKET_NAME: ${{ secrets.S3_BUCKET_NAME }}
-          S3_ACCESS_KEY_ID: ${{ secrets.S3_ACCESS_KEY_ID }}
-          S3_SECRET_ACCESS_KEY: ${{ secrets.S3_SECRET_ACCESS_KEY }}
-          S3_ENDPOINT_URL: ${{ secrets.S3_ENDPOINT_URL }}
-          S3_REGION: ${{ secrets.S3_REGION }}
-          GITHUB_ACTIONS: true
-        run: uv run python -m trendradar
+          GITHUB_ACTIONS: "true"
+          AI_ANALYSIS_ENABLED: "false"
+        run: |
+          # 删除仓库自带首页及运行输出，确保不能发布旧报告。
+          rm -f index.html
+          rm -rf output cloudflare_dist
+          uv run python -m trendradar
+          test -s index.html || { echo "::error::本次采集未生成 index.html"; exit 1; }
+          uv run python scripts/prepare_pages.py
 
       # --------------------------------------------------------------------------------
       # ☁️ CLOUDFLARE PAGES DEPLOY / 部署到 Cloudflare Pages（可选）
       # --------------------------------------------------------------------------------
       # 将爬虫生成的 index.html 自动部署到 Cloudflare Pages，国内访问比 GitHub Pages 更快。
-      # 仅当下面三个 Secrets 均已配置时才会执行，缺任意一个则自动跳过，不影响其它流程：
+      # 下面三个 Secrets 必须全部配置，缺失时明确失败，不误报部署成功：
       #   - CLOUDFLARE_API_TOKEN     权限：Account → Cloudflare Pages → Edit
       #   - CLOUDFLARE_ACCOUNT_ID    Cloudflare 账户 ID
       #   - CLOUDFLARE_PROJECT_NAME  Cloudflare Pages 项目名（需提前在 Dashboard 创建）
@@ -192,19 +163,10 @@ jobs:
             echo "✅ 检测到 Cloudflare 配置，准备部署到 Cloudflare Pages"
           else
             echo "enabled=false" >> "$GITHUB_OUTPUT"
-            echo "ℹ️ 未配置 Cloudflare Secrets，跳过 Cloudflare Pages 部署"
-          fi
-
-      - name: Prepare Cloudflare Pages assets
-        if: success() && steps.cf_check.outputs.enabled == 'true'
-        run: |
-          if [ ! -f index.html ]; then
-            echo "❌ 未找到 index.html，请确认爬虫已生成网页报告"
+            echo "::error::Cloudflare 部署未执行：请配置全部三个 CLOUDFLARE Secrets，参见 docs/DEPLOYMENT_GUIDE.md"
+            echo "### 未部署：缺少 Cloudflare Secrets" >> "$GITHUB_STEP_SUMMARY"
             exit 1
           fi
-          rm -rf cloudflare_dist
-          mkdir -p cloudflare_dist
-          cp index.html cloudflare_dist/index.html
 
       - name: Deploy to Cloudflare Pages
         if: success() && steps.cf_check.outputs.enabled == 'true'
@@ -212,4 +174,12 @@ jobs:
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          command: pages deploy cloudflare_dist --project-name=${{ secrets.CLOUDFLARE_PROJECT_NAME }}
+          command: pages deploy cloudflare_dist --project-name=${{ secrets.CLOUDFLARE_PROJECT_NAME }} --branch=master
+
+      - name: Deployment summary
+        if: success() && steps.cf_check.outputs.enabled == 'true'
+        run: echo "### Cloudflare Pages 部署命令已成功执行，请在 Cloudflare 控制台查看 Production 网址" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Remove temporary news data
+        if: always()
+        run: rm -rf output cloudflare_dist index.html

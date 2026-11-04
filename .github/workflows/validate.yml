@@ -1,0 +1,32 @@
+name: Validate news website
+
+on:
+  push:
+    paths:
+      - 'config/**'
+      - '.github/workflows/**'
+      - 'scripts/**'
+      - 'tests/**'
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - uses: astral-sh/setup-uv@v7
+      - run: uv sync --frozen
+      - name: Validate config and keywords
+        run: uv run python scripts/check_website_config.py
+      - name: Existing tests and report deployment tests
+        run: uv run --with pytest python -m pytest tests -q
+      - name: Check workflow syntax with actionlint
+        run: go run github.com/rhysd/actionlint/cmd/actionlint@v1.7.7 -shellcheck= .github/workflows/crawler.yml .github/workflows/clean-crawler.yml .github/workflows/validate.yml
