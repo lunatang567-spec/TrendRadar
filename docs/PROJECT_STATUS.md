@@ -10,7 +10,7 @@
 | 4 | 配置每日自动运行 | 完成：Cron 与 workflow_dispatch 已检查，actionlint 通过；实际定时触发待验收 |
 | 5 | 配置 HTML 网页生成 | 完成：真实生成 HTML，11 个完整热榜区，306 个新闻链接 |
 | 6 | 配置 Cloudflare 自动部署 | 完成：工作流通过 actionlint；真实部署待用户配置与验收 |
-| 7 | 运行自动化测试 | 部分通过：全量 31 项及 35 子测试通过；MCP stdio 一项本机超时，待 CI 验证 |
+| 7 | 运行自动化测试 | 本地部分通过；云端未运行：Actions 未登记工作流，validate.yml API 返回 404 |
 | 8 | 创建 Cloudflare 项目和 Secrets | 待用户操作 |
 | 9 | 首次真实采集测试 | 本地完成：11 平台全部成功，254 条新闻；GitHub 手动端到端运行待用户配置 |
 | 10 | 新闻网站正式上线 | 待用户操作：完成首次部署和访问验收 |
@@ -52,6 +52,24 @@ Cloudflare Token 的真实权限、项目归属、Production 分支配置、真�
 - Actions 权限 API 显示 `enabled: true`、`allowed_actions: all`，但工作流清单、运行记录和 PR checks 均为空。手动触发 validate.yml 返回 404（尚未在默认分支注册）。用户确认 Actions 页面只显示 “There are no workflow runs yet”。不能将其记为云端测试通过。
 - 本次继续修正文档：Direct Upload 生产分支须通过 Cloudflare API 初始化，已提供隐藏输入 Token 的 PowerShell 步骤。不创建收费资源。
 
-待检查文档推送后 PR 的 synchronize 事件是否触发自动验证；未重复运行已通过的整套本地测试。**目前尚不满足“云端检查全部通过”的合并条件，不自动合并、不强制推送。**
+后续文档更新 `9dba0b7` 与工作流更新 `3e23746` 已在原开发分支正常提交并推送。工作流更新增加同分支去重，并把 actionlint 放在 Python 测试之前；未删除任何测试或降低标准。没有重复运行已通过的整套本地测试。
+
+上述 push/PR synchronize 事件之后，Actions 运行列表、工作流列表和 PR checks 仍为空。通过 gh 重新保存原有 `enabled=true / allowed_actions=all` 设置成功，但单个 validate.yml 查询仍 404；默认 GITHUB_TOKEN 权限为 read，master 未启用分支保护。当前未能确定 GitHub 未登记工作流的根因，不能仅凭“没有失败检查”建议合并。
+
+| 审查项 | 实际结果 |
+| --- | --- |
+| gh 登录身份 | 通过：lunatang567-spec，使用已有 GCM 登录 |
+| origin / PR 方向 | 通过：自己的 Fork；codex/daily-news-pages → master |
+| 初始工作区 | 干净，原三个提交均已推送 |
+| 全部差异与敏感信息 | 已审查；未发现新增真实密钥；核心、锁文件、官方签到机制未变 |
+| YAML、关键词校验 | 复用此前本地通过记录；云端未运行 |
+| actionlint | 通过；最新工作流调整后再次检查通过；云端未运行 |
+| Python 测试 | 复用本地 31 项通过、35 子测试通过、1 项 MCP stdio 超时；云端未运行 |
+| 部署测试 | 复用本地三项通过；云端未运行 |
+| 合并冲突 | GitHub 报告 MERGEABLE；不等于测试通过 |
+| 合并结论 | **暂不建议合并，等待 Actions 能登记并完成全部验证** |
+| Cloudflare | 命令、三个 Secrets 名称及 HTML 打包边界已核对；账户、项目、Token、生产分支初始化及真实部署待用户操作 |
+
+当前 master 仍为 `946f52aa0704883f666c322888b8cd9af4cbcfff`，未合并、未直接修改 master、未强制推送。
 
 最终复查：工作区无数据库跟踪，七天签到工作流无差异；git diff --check、配置校验和 actionlint 通过。加强独立展示区的实际 HTML 节点检查后，三项新增部署测试再次通过。真实采集产生的本地 output 和部署目录已清除。

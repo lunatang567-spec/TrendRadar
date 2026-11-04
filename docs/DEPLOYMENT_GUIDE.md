@@ -82,6 +82,10 @@ PR 审查阶段先运行 **Validate news website**，不要先运行采集或发
 
 如果 Actions 没有任何工作流或运行记录，即使 **Settings → Actions → General** 允许 Actions，也不能视为测试通过。打开仓库 **Actions**，如出现 **I understand my workflows, go ahead and enable them**，点击启用；之后向开发分支推送必要更新以触发 PR 的 `synchronize` 事件。新增 `validate.yml` 尚未在默认分支注册时，直接手动触发可能返回 404，此时不要为注册它而提前合并业务 PR。
 
+2026-11-04 的实际排查记录：此 Fork 的 Actions 权限已为 enabled/all，用户页面显示空运行列表；已推送工作流变更并重新保存同一权限设置，但工作流列表仍为空、validate.yml 查询仍返回 404。云端测试尚未开始。请在 **Settings → Actions → General** 检查页面是否另有账户/仓库限制、验证提示；若没有可操作提示，向 GitHub Support 提供仓库地址、[PR #1](https://github.com/lunatang567-spec/TrendRadar/pull/1) 和上述 API 现象，排查工作流未登记的问题。当前不能承诺点击某个不存在的按钮即可解决，也不要用提前合并替代测试。
+
+工作流可被识别后，在 PR 的 **Checks** 查看 **Validate news website**：依赖安装、配置/关键词、actionlint、Python/部署测试均应通过。若运行报错，先阅读失败步骤日志并在原开发分支修复；确认完成后仍需用户决定合并。
+
 ## 7. 每七天签到续期（必须手动）
 
 每七天内至少操作一次，建议第六天操作：仓库 **Actions → Check In → Run workflow → master → Run workflow**。该官方流程删除工作流运行记录，以重置七天计时；本 Fork 未删除或绕过它，也没有自动签到。
