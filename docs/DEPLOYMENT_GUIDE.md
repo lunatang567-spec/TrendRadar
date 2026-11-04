@@ -13,7 +13,7 @@
 2. 选择 **Pages**（有些界面需要点底部 **Get started**），选择 **Upload assets / Drag and drop / 直接上传**。本方案使用 Direct Upload，由 GitHub Actions 构建，不要选择 Git 自动构建。
 3. 输入项目名，例如 `trendradar-daily`。若被占用，换成自己的唯一名称；记下最终名称。
 4. 在电脑新建一个 `index.html`，内容填 `<h1>TrendRadar 正在准备首次采集</h1>`，上传此文件或包含它的文件夹，点击 **Deploy site**。这是占位页，不代表新闻网站已验收上线。
-5. 在项目 **Deployments** 查看 **Production** 分支，确保是 `master`；如不是，在项目 **Settings → Builds & deployments / Branch control** 将 Production branch 调整为 `master`。如果界面不提供该选项，可在有 Node.js 的终端运行 `npx wrangler pages project create 你的新项目名 --production-branch master` 创建另一 Direct Upload 项目，再使用它的名称配置 Secret。
+5. 在项目 **Deployments** 查看 **Production** 部署。Direct Upload 项目没有控制台生产分支设置入口；创建 API Token 后，按第 4.1 节把生产分支明确设为 `master`，避免 Actions 的 `--branch=master` 只更新预览网址。
 6. 记下控制台分配的正式地址，通常为 `https://项目名.pages.dev`。以控制台实际地址为准。
 
 ## 3. 获取 Account ID
@@ -28,6 +28,31 @@
 4. **Permissions** 添加 `Account → Cloudflare Pages → Edit`。
 5. **Account Resources** 选择 `Include → Specific account → 你的账户`。
 6. 无需配置 Zone 权限。点击 **Continue to summary → Create Token**，复制只显示一次的 Token，并妥善保存。不要贴到聊天、代码或日志。
+
+### 4.1 设置 Direct Upload 生产分支（首次初始化）
+
+本项目的发布命令明确使用 `--branch=master`，Cloudflare 项目的 `production_branch` 必须同为 `master`。Cloudflare 官方说明 Direct Upload 需通过 API 修改该设置，不能使用 Git 集成项目的控制台分支菜单。
+
+完成前面账户、项目、Token 的创建后，在本机 PowerShell 逐段执行以下代码。提示时输入真实值；Token 使用隐藏输入，不会进入命令历史。该操作只更新现有 Pages 项目的生产分支，不创建收费资源。
+
+```powershell
+$cfAccountId = Read-Host 'Cloudflare Account ID'
+$cfProjectName = Read-Host 'Pages 项目名称'
+$cfTokenInput = Read-Host 'Cloudflare API Token' -AsSecureString
+$cfToken = [System.Net.NetworkCredential]::new('', $cfTokenInput).Password
+try {
+    $cfProjectUri = "https://api.cloudflare.com/client/v4/accounts/$cfAccountId/pages/projects/$cfProjectName"
+    $cfResult = Invoke-RestMethod -Method Patch -Uri $cfProjectUri `
+        -Headers @{ Authorization = "Bearer $cfToken" } `
+        -ContentType 'application/json' -Body '{"production_branch":"master"}'
+    $cfResult.success
+    $cfResult.result.production_branch
+} finally {
+    Remove-Variable cfToken, cfTokenInput -ErrorAction SilentlyContinue
+}
+```
+
+期望输出 `True` 和 `master`。如出现权限错误，检查 Token 的 `Cloudflare Pages → Edit` 和指定账户范围。也可以先用官方 Wrangler 创建空 Direct Upload 项目：`npx wrangler login`，再执行 `npx wrangler pages project create 你的项目名 --production-branch master`；此方式需要本机安装 Node.js/npm，后续仍使用同样三个 GitHub Secrets。
 
 ## 5. 在 GitHub 添加三个 Secrets
 
@@ -53,6 +78,10 @@
 6. 在 Cloudflare 项目 **Deployments → Production** 确认本次部署成功，打开正式网址。用手机和电脑检查生成时间、关键词分类、完整热榜以及新闻标题原文链接。
 7. 若平台部分失败，官方会在报告和日志中提示。平台全失败或未生成新报告会阻止部署，不覆盖上一版可用网页。
 
+PR 审查阶段先运行 **Validate news website**，不要先运行采集或发布。当前 PR 为 [#1](https://github.com/lunatang567-spec/TrendRadar/pull/1)，方向是同一 Fork 内 `codex/daily-news-pages → master`，需等检查通过且用户确认后再合并。
+
+如果 Actions 没有任何工作流或运行记录，即使 **Settings → Actions → General** 允许 Actions，也不能视为测试通过。打开仓库 **Actions**，如出现 **I understand my workflows, go ahead and enable them**，点击启用；之后向开发分支推送必要更新以触发 PR 的 `synchronize` 事件。新增 `validate.yml` 尚未在默认分支注册时，直接手动触发可能返回 404，此时不要为注册它而提前合并业务 PR。
+
 ## 7. 每七天签到续期（必须手动）
 
 每七天内至少操作一次，建议第六天操作：仓库 **Actions → Check In → Run workflow → master → Run workflow**。该官方流程删除工作流运行记录，以重置七天计时；本 Fork 未删除或绕过它，也没有自动签到。
@@ -65,7 +94,7 @@
 - 网页生成时间应对应当天本次运行。刷新浏览器，并在 Cloudflare **Deployments** 检查 Production 最新时间，不能仅凭 Actions 绿色判断网页内容。
 - 采集失败：打开 **crawl → Run crawler**，检查网络/API 错误、失败平台、域名校验告警和生成报告日志。使用原有接口，不要随意更换不明接口。
 - 缺 Secrets：按第 5 节补齐全部三项后重跑。Token 无权限/失效：重建 Pages Edit Token 并更新 GitHub Secret。找不到项目：核对项目名称与 Account ID 是否属于同一账户。
-- 部署到 Preview：确认 Production branch 是 `master`。工作流明确使用 `--branch=master`。
+- 部署到 Preview：按第 4.1 节通过 Cloudflare API 把 Production branch 设为 `master`。Direct Upload 没有控制台分支菜单；工作流明确使用 `--branch=master`。
 - 超过七天：按第 7 节签到、重新启用并运行。
 - Fork 长期无提交时 GitHub 还可能因仓库不活跃停用定时工作流；在 Actions 页面检查并启用。免费额度和服务规则以 GitHub/Cloudflare 当前页面为准。
 
@@ -85,11 +114,11 @@ Cloudflare 本身会保留部署版本以支持回滚，本方案没有历史新
 
 ## 11. 如代码尚未推送到 GitHub
 
-本地仓库位于 `D:\MyMind\TrendRadar`，分支为 `codex/daily-news-pages`。如果交付报告说明推送受阻，可在电脑终端执行：
+本地仓库位于 `D:\MyMind\TrendRadar`，分支为 `codex/daily-news-pages`。代码已推送，且 [PR #1](https://github.com/lunatang567-spec/TrendRadar/pull/1) 已创建。后续必要修复仍可在此分支执行：
 
 ```powershell
 cd D:\MyMind\TrendRadar
 git push -u origin codex/daily-news-pages
 ```
 
-按 Git Credential Manager 提示登录有写入权的 GitHub 账号。然后打开仓库，点击 **Compare & pull request**；确认 **base repository** 为 `lunatang567-spec/TrendRadar`、**base** 为 `master`、**compare** 为 `codex/daily-news-pages`，创建 PR 并检查 **Validate news website**。测试通过后合并到 `master`。若 Fork 的 Actions 被禁用，先启用 Actions，再在验证工作流选择功能分支手动运行。没有推送成功前，不要运行 GitHub 上的旧采集工作流。
+已有 PR 会随推送更新，不要重复创建。确认 **base repository** 为 `lunatang567-spec/TrendRadar`、**base** 为 `master`、**compare** 为 `codex/daily-news-pages`，检查 **Validate news website**。测试通过并获得用户明确确认后才合并。不要运行 GitHub 上尚未合并改动的旧采集工作流。

@@ -26,7 +26,7 @@
 
 ## 用户下一步
 
-按照 [部署指南](DEPLOYMENT_GUIDE.md) 第 1—5 节创建免费 Cloudflare Pages Direct Upload 项目，设置 Production branch 为 `master`，在 GitHub 添加三个 Secrets。随后按第 6 节先运行 **Check In**、再运行 **Get Hot News**。成功后用电脑和手机检查完整热榜、关键词分类、新闻原文链接、生成时间及 Production 网址。
+先完成 [PR #1](https://github.com/lunatang567-spec/TrendRadar/pull/1) 的云端验证与代码审查，用户确认后再合并。随后按照 [部署指南](DEPLOYMENT_GUIDE.md) 第 1—5 节创建免费 Cloudflare Pages Direct Upload 项目，通过第 4.1 节的 API 设置 Production branch 为 `master`，在 GitHub 添加三个 Secrets。按第 6 节先运行 **Check In**、再运行 **Get Hot News**。成功后用电脑和手机检查完整热榜、关键词分类、新闻原文链接、生成时间及 Production 网址。
 
 ## 尚未验证
 
@@ -41,8 +41,17 @@ Cloudflare Token 的真实权限、项目归属、Production 分支配置、真�
 - 2026-11-04 11:20 北京时间真实采集：11/11 平台成功，254 条新闻，52 条关键词匹配；报告审计确认 11 个完整热榜分组和 306 个新闻链接（254 完整热榜 + 52 分类结果）。部分平台接口返回缓存，这是官方数据源行为。
 - 发布目录审计通过，只含 index.html；数据库和历史目录不发布、不提交。真实采集使用本机 Python 3.14 隔离环境，GitHub 工作流使用官方 Python 3.12 和 uv.lock，需由新增 Validate news website 工作流继续核验。
 
-## 提交通道
+## GitHub 提交与 PR 审查
 
-GitHub 插件读取正常，但创建 Git tree 和功能分支均返回 `403 Resource not accessible by integration`。本地代码已提交到 `codex/daily-news-pages`；本机两次 Git push 分别遇到连接重置和无法连接 github.com:443。**尚未推送成功，没有远端提交地址或 PR；GitHub 上的 master 尚未应用本次改动，也未运行新增 CI。** 需授权可写的 GitHub 连接，或在本机配置 Git 登录及可用网络后推送功能分支，步骤见部署指南第 11 节。
+用户已通过 Git Credential Manager 浏览器授权，原三个提交已推送。GitHub 插件写入仍受限，现使用本机 Git、gh 及内存中加载的 GCM 凭据；未将凭据写入仓库或日志。`gh auth status` 与 `/user` 已确认账号为 `lunatang567-spec`。gh 提示缺少 `read:org`，该范围不是本次个人仓库 PR/Actions 操作的必要条件，未扩大授权。
+
+- PR：[Deploy TrendRadar daily news website #1](https://github.com/lunatang567-spec/TrendRadar/pull/1)，已创建，状态 OPEN、未合并。
+- 合并方向：同一 Fork `lunatang567-spec/TrendRadar` 内，`codex/daily-news-pages → master`。GitHub 判断无合并冲突。
+- 已 fetch origin，确认 master 仍为原始 `946f52a`；原开发分支为 `6540b7c`，三个原提交均存在。
+- 原 19 个变更路径已审查，git diff --check 通过；新增行的已知密钥模式扫描为零，AI/远程存储凭据为空。核心 `trendradar/`、依赖文件与官方 Check In 无差异。
+- Actions 权限 API 显示 `enabled: true`、`allowed_actions: all`，但工作流清单、运行记录和 PR checks 均为空。手动触发 validate.yml 返回 404（尚未在默认分支注册）。用户确认 Actions 页面只显示 “There are no workflow runs yet”。不能将其记为云端测试通过。
+- 本次继续修正文档：Direct Upload 生产分支须通过 Cloudflare API 初始化，已提供隐藏输入 Token 的 PowerShell 步骤。不创建收费资源。
+
+待检查文档推送后 PR 的 synchronize 事件是否触发自动验证；未重复运行已通过的整套本地测试。**目前尚不满足“云端检查全部通过”的合并条件，不自动合并、不强制推送。**
 
 最终复查：工作区无数据库跟踪，七天签到工作流无差异；git diff --check、配置校验和 actionlint 通过。加强独立展示区的实际 HTML 节点检查后，三项新增部署测试再次通过。真实采集产生的本地 output 和部署目录已清除。
