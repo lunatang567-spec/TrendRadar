@@ -1,4 +1,5 @@
 name: Validate news website
+# 触发诊断：通过本机 Git Credential Manager 用户授权推送，验证 push 事件。
 
 on:
   push:
