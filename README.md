@@ -1,3 +1,5 @@
+> 本 Fork 用于每日新闻静态网站：北京时间 08:00 采集，完整热榜 + 关键词分类，无 AI、通知或跨运行历史存储。部署与七天签到见 [中文部署指南](docs/DEPLOYMENT_GUIDE.md)，实际验证进度见 [项目状态](docs/PROJECT_STATUS.md)。网站尚待 Cloudflare 配置与首次部署验收。
+
 <div align="center" id="trendradar">
 
 <a href="https://github.com/sansan0/TrendRadar" title="TrendRadar">
@@ -1265,7 +1267,7 @@ GitHub Pages 在国内访问较慢，[Cloudflare Pages](https://pages.cloudflare
 
 配置完成后，下一次 GitHub Actions 运行即会自动部署，访问地址为 `https://<项目名>.pages.dev`。
 
-> 💡 **说明**：三个 Secret 缺任意一个都会自动跳过 Cloudflare 部署，不会影响新闻推送等其它功能；如需绑定自定义域名，可在 Pages 项目的 **Custom domains** 中设置。
+> 💡 **说明**：本 Fork 中三个 Secret 缺任意一个会明确报错，表示采集后尚未完成发布；如需绑定自定义域名，可在 Pages 项目的 **Custom domains** 中设置。
 
 ### **减少 APP 依赖**
 
