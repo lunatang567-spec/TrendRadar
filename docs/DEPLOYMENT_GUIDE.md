@@ -84,6 +84,8 @@ PR 审查阶段先运行 **Validate news website**，不要先运行采集或发
 
 2026-11-04 的实际排查记录：此 Fork 的 Actions 权限已为 enabled/all，用户页面显示空运行列表；已推送工作流变更并重新保存同一权限设置，但工作流列表仍为空、validate.yml 查询仍返回 404。云端测试尚未开始。请在 **Settings → Actions → General** 检查页面是否另有账户/仓库限制、验证提示；若没有可操作提示，向 GitHub Support 提供仓库地址、[PR #1](https://github.com/lunatang567-spec/TrendRadar/pull/1) 和上述 API 现象，排查工作流未登记的问题。当前不能承诺点击某个不存在的按钮即可解决，也不要用提前合并替代测试。
 
+后续已在北京时间 14:23:45 完成一次独立用户 OAuth 推送实验，提交 `9b13e4b44d7364c79da354b3d1d6001bc7025d5f` 仅给 validate.yml 增加中文注释，精确匹配 push 路径过滤。至 14:27:30 仍无任何运行或检查，现已具备准备 Support 材料的真实重现记录。注意：push 可以运行开发分支中的新工作流，不能把它尚未合并到 master 当作本次无触发的解释。
+
 工作流可被识别后，在 PR 的 **Checks** 查看 **Validate news website**：依赖安装、配置/关键词、actionlint、Python/部署测试均应通过。若运行报错，先阅读失败步骤日志并在原开发分支修复；确认完成后仍需用户决定合并。
 
 ## 7. 每七天签到续期（必须手动）

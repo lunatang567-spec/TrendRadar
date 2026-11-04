@@ -72,4 +72,17 @@ Cloudflare Token 的真实权限、项目归属、Production 分支配置、真�
 
 当前 master 仍为 `946f52aa0704883f666c322888b8cd9af4cbcfff`，未合并、未直接修改 master、未强制推送。
 
+## 2026-11-04 用户 OAuth 推送触发实验
+
+- 独立提交 `9b13e4b44d7364c79da354b3d1d6001bc7025d5f`：仅在 validate.yml 添加一条中文注释，无功能变更。实验前工作区干净，本地与远程开发分支同步。
+- 使用本机 Git Credential Manager 用户 OAuth 凭据，API 确认账号 lunatang567-spec；推送显式限定 manager 凭据助手，无 GITHUB_TOKEN、Git extraheader 或 askpass 覆盖。未保存任何凭据值。
+- 推送开始：北京时间 14:23:41.089973；完成：14:23:45.723889（UTC 06:23:45.723889），exit code 0。远程分支、PR head 和工作流文件均核验存在。
+- 推送前 Actions 已启用且允许 all；唯一变更路径 .github/workflows/validate.yml 匹配 push.paths，没有分支过滤或 skip-CI 标记。
+- 至北京时间 14:27:30 的延时快照：gh run list 为空；gh pr checks 无检查；check-runs/status 均为零；工作流列表 HTTP 200、total_count=0。没有 run ID 或测试步骤日志。
+- PR 作者为 OWNER，head/base 同仓库，审批策略为 first_time_contributors，未发现可见待审批运行；仓库非 archived/disabled。
+- 不能追溯证明首次推送前的 Actions 启用状态，也不能仅凭 commit author 断言历史令牌类型。此前 9dba0b7、fcb5542 为纯文档推送，不匹配 push 路径过滤；3e23746 和本次实验均匹配。
+- **纠正推断边界：validate.yml 不在 master 只能解释手动 workflow_dispatch 404，不能解释匹配的 push 未触发。** 本次用户凭据实验仍无运行，真正根因未确定；需 GitHub 排查内部事件处理、工作流登记或账户/仓库隐藏限制。
+- 已保存推送前后 JSON、准确时间、权限与 API 请求 ID，并准备 Support 说明；未发送工单。云端 Python 3.12、uv sync、配置/关键词、actionlint、全部 Python 和部署测试均未运行。原本地测试结果不变，不宣称全部通过。
+- 本次未更改 Actions 权限或 Cloudflare 设置，未合并 PR、未修改 master、未强推。
+
 最终复查：工作区无数据库跟踪，七天签到工作流无差异；git diff --check、配置校验和 actionlint 通过。加强独立展示区的实际 HTML 节点检查后，三项新增部署测试再次通过。真实采集产生的本地 output 和部署目录已清除。
