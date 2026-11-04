@@ -10,9 +10,12 @@ class NewsLinks(HTMLParser):
     def __init__(self):
         super().__init__()
         self.count = 0
+        self.standalone_groups = 0
 
     def handle_starttag(self, tag, attrs):
         attrs = dict(attrs)
+        if 'standalone-group' in attrs.get('class', '').split():
+            self.standalone_groups += 1
         if tag == 'a' and 'news-link' in attrs.get('class', '').split():
             if attrs.get('href', '').startswith('https://'):
                 self.count += 1
@@ -37,7 +40,7 @@ def prepare(root=Path('.')):
     html = index.read_text(encoding='utf-8')
     parser = NewsLinks()
     parser.feed(html)
-    if parser.count == 0 or 'standalone-group' not in html or 'name="viewport"' not in html:
+    if parser.count == 0 or parser.standalone_groups == 0 or 'name="viewport"' not in html:
         raise RuntimeError('报告缺少新闻链接、独立展示区或移动端 viewport')
     dist = root / 'cloudflare_dist'
     if dist.exists():

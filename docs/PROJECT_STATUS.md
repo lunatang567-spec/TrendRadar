@@ -43,4 +43,6 @@ Cloudflare Token 的真实权限、项目归属、Production 分支配置、真�
 
 ## 提交通道
 
-GitHub 插件读取正常，但创建 Git tree 和功能分支均返回 `403 Resource not accessible by integration`。本地代码已提交到 `codex/daily-news-pages`；本机首次 Git push 连接被重置。远端推送状态以最终交付报告为准。若远端提交未成功，需授权可写的 GitHub 连接，或在本机配置 Git 登录后推送功能分支，步骤见部署指南补充。
+GitHub 插件读取正常，但创建 Git tree 和功能分支均返回 `403 Resource not accessible by integration`。本地代码已提交到 `codex/daily-news-pages`；本机两次 Git push 分别遇到连接重置和无法连接 github.com:443。**尚未推送成功，没有远端提交地址或 PR；GitHub 上的 master 尚未应用本次改动，也未运行新增 CI。** 需授权可写的 GitHub 连接，或在本机配置 Git 登录及可用网络后推送功能分支，步骤见部署指南第 11 节。
+
+最终复查：工作区无数据库跟踪，七天签到工作流无差异；git diff --check、配置校验和 actionlint 通过。加强独立展示区的实际 HTML 节点检查后，三项新增部署测试再次通过。真实采集产生的本地 output 和部署目录已清除。
